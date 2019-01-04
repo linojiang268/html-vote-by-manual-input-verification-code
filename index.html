@@ -91,20 +91,9 @@
 
             refreshInfo();
 
-
-            // document.onkeydown=function(event){
-            //     index()
-            //     var e=event||window.event||arguments.callee.caller.arguments[0];
-            //     if(e && e.keyCode==13){ // 按 Esc
-            //         //要做的事情
-            //         getData()
-            //     }
-            // };
-
-
             $('button').click(function(){
                 var index = $(this).attr('index')
-                getData(index)
+                vote(index)
             })
 
             function addInputListener(index){
@@ -241,7 +230,7 @@
                     success: function (res) {
                         if (res['code'] === 0) {
                             // alert("提交成功");
-                            $('h3').html(res['data']['studentName'] + ' 当前票数：' + res['data']['total']);
+                            $('h3').html(res['data']['studentName'] + ' 当前票数：' + res['data']['total'] + ' 排名：' + res['data']['rank']);
                         }
                     }
                 });
