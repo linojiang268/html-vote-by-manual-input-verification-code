@@ -73,6 +73,8 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fingerprintjs2/1.5.1/fingerprint2.min.js"></script>
     <script>
         var fp = new Fingerprint2();
+        // 同一个token允许投几次（10次以下）(每次有10秒的时间限制)
+        var max = 1;
         var items = [];
 
         $(function(){
@@ -165,7 +167,7 @@
             }
 
             function checkToken(index) {
-                if (items[index]['count'] >= 8) {
+                if (items[index]['count'] >= max) {
                     return false
                 }
                 return true
@@ -173,6 +175,7 @@
 
             function refreshTokenAndReload(index) {
                 fp.get(function(result, components) {
+                    items[index]['count'] = 0;
                     items[index]['token'] = fingerprint=result+uuid(16,16);
                     reloadItem(index)
                 });
