@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>刷票票</title>
+    <style>
+        body{
+            font-size: 50px;
+        }
+        p{
+            margin: 20px 0px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        img{
+            width: 400px;
+            height: 100px;
+        }
+        button{
+            width: 200px;
+            height: 100px;
+            font-size: 50px;
+            margin-left: 50px;
+        }
+        input{
+            width: 300px;
+            height: 95px;
+            margin-left: 30px;
+            font-size: 50px;
+        }
+        h3{
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3></h3>
+        <p>
+            <img src="">
+            <input type="text"/>
+            <button>提交</button>
+        </p>
+        <p>
+            <img src="">
+            <input type="text"/>
+            <button>提交</button>
+        </p>
+        <p>
+            <img src="">
+            <input type="text"/>
+            <button>提交</button>
+        </p>
+        <p>
+            <img src="">
+            <input type="text"/>
+            <button>提交</button>
+        </p>
+        <p>
+            <img src="">
+            <input type="text"/>
+            <button>提交</button>
+        </p>
+        <p>
+            <img src="">
+            <input type="text"/>
+            <button>提交</button>
+        </p>
+    </div>
+
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fingerprintjs2/1.5.1/fingerprint2.min.js"></script>
+    <script>
+        var fp = new Fingerprint2();
+        var items = [];
+
+        $(function(){
+            // 初始化token和次数
+            $($(".box p")).each(function(index, item){
+                items.push({
+                    token: null,
+                    count: 0
+                });
+                // 设置编号
+                $(".box p button").eq(index).attr('index',index)
+                $(".box p input").eq(index).attr('index',index)
+                addInputListener(index)
+                refreshTokenAndReload(index)
+            })
+
+            refreshInfo();
+
+
+            // document.onkeydown=function(event){
+            //     index()
+            //     var e=event||window.event||arguments.callee.caller.arguments[0];
+            //     if(e && e.keyCode==13){ // 按 Esc
+            //         //要做的事情
+            //         getData()
+            //     }
+            // };
+
+
+            $('button').click(function(){
+                var index = $(this).attr('index')
+                getData(index)
+            })
+
+            function addInputListener(index){
+                $(".box p input").eq(index).keydown(function(e){
+                    if(e.keyCode==13){
+                        vote(index)
+                    }
+                })
+            }
+
+            function vote(index){
+                $.ajax({
+                    headers: {
+                        Accept: "application/json; charset=utf-8",
+                        // Accept-Encoding: "gzip, deflate",
+                        // Accept-Language: "zh-CN,zh;q=0.8",
+                        Connection: "keep-alive",
+                        // Content-Length: 128,
+                        // Content-Type: "application/json",
+                        Host: "voteapi2.ga1993.net",
+                        Origin: "http://vote.ga1993.net",
+                        Referer: "http://vote.ga1993.net/detail.html?index=bdbf831e-8be2-4a1b-af6b-8ec7e841f6e5&from=singlemessage&isappinstalled=0"
+                        // User-Agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 wechatdevtools/0.7.0 MicroMessenger/6.3.9 Language/zh_CN webview/0"
+                    },
+                    type: "POST",
+                    url: "http://voteapi2.ga1993.net/QH/AiMiErPlatform/AddStudentVote",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify({
+                        token: items[index]['token'],
+                        userID: "bdbf831e-8be2-4a1b-af6b-8ec7e841f6e5",
+                        verifyCode: $('input').eq(index).val()
+                    }),
+                    dataType: "json",
+                    beforeSend: function(request) {
+                        request.setRequestHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 wechatdevtools/0.7.0 MicroMessenger/6.3.9 Language/zh_CN webview/0");
+                    },
+                    success: function (res) {
+                        if (res['code'] === 0) {
+                            // alert("提交成功");
+                        } else {
+                            alert("提交失败" + res.message);
+                        }
+
+                        // count加1，且验证token是否作废
+                        items[index]['count'] += 1;
+                        if (checkToken(index)) {
+                            // 有效则刷新验证码
+                            reloadItem(index)
+                        } else {
+                            // 失销则刷新token，且异步刷新完token会自动刷新验证码
+                            refreshTokenAndReload(index)
+                        }
+
+                        refreshInfo()
+                    },
+                    error: function () {
+                        alert('错误');
+                        // count加1，且验证token是否作废
+                        items[index]['count'] += 1;
+                        if (checkToken(index)) {
+                            // 有效则刷新验证码
+                            reloadItem(index)
+                        } else {
+                            // 失销则刷新token，且异步刷新完token会自动刷新验证码
+                            refreshTokenAndReload(index)
+                        }
+                    }
+                });
+            }
+
+            function checkToken(index) {
+                if (items[index]['count'] >= 8) {
+                    return false
+                }
+                return true
+            }
+
+            function refreshTokenAndReload(index) {
+                fp.get(function(result, components) {
+                    items[index]['token'] = fingerprint=result+uuid(16,16);
+                    reloadItem(index)
+                });
+            }
+
+            function reloadItem(index) {
+                displayImg(index)
+                $('input').eq(index).val('')
+            }
+
+            function displayImg(index) {
+                var imageUrl = "http://voteapi2.ga1993.net/QH/AiMiErPlatform/GetVoteVerifyCode?token=" + items[index]['token'] + "&time="+Date.parse(new Date());
+                $('img').eq(index).attr('src', imageUrl)
+            }
+
+            function uuid(len, radix) {
+                var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+                var uuid = [], i;
+                radix = radix || chars.length;
+
+                if (len) {
+                    for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random()*radix];
+                } else {
+                    var r;
+                    uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+                    uuid[14] = '4';
+                    for (i = 0; i < 36; i++) {
+                        if (!uuid[i]) {
+                            r = 0 | Math.random()*16;
+                            uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                        }
+                    }
+                }
+                return uuid.join('');
+            }
+
+            function refreshInfo() {
+                $.ajax({
+                    headers: {
+                        Accept: "application/json; charset=utf-8",
+                        Host: "voteapi2.ga1993.net",
+                        Origin: "http://vote.ga1993.net",
+                        Referer: "http://vote.ga1993.net/detail.html?index=bdbf831e-8be2-4a1b-af6b-8ec7e841f6e5&from=singlemessage&isappinstalled=0"
+                    },
+                    type: "POST",
+                    url: "http://voteapi2.ga1993.net/QH/AiMiErPlatform/GetStudentInfo",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify({
+                        userID: "bdbf831e-8be2-4a1b-af6b-8ec7e841f6e5",
+                    }),
+                    dataType: "json",
+                    beforeSend: function(request) {
+                        request.setRequestHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 wechatdevtools/0.7.0 MicroMessenger/6.3.9 Language/zh_CN webview/0");
+                    },
+                    success: function (res) {
+                        if (res['code'] === 0) {
+                            // alert("提交成功");
+                            $('h3').html(res['data']['studentName'] + ' 当前票数：' + res['data']['total']);
+                        }
+                    }
+                });
+            }
+        })
+    </script>
+</body>
+</html>
