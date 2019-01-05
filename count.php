@@ -1,6 +1,6 @@
 <?php
 
-$total = file_exists() ? file_get_contents('total.log') : '';
+$total = file_exists('total.log') ? file_get_contents('total.log') : '';
 if (empty($total)) {
     $total = 0;
 }
