@@ -210,6 +210,9 @@
                             // alert("提交成功");
                             $('h3').html(res['data']['studentName'] + ' 当前票数:' + res['data']['total'] + ' 排名:' + res['data']['rank']);
                         }
+                    },
+                    error: function (message) {
+                        $('h3').html('服务器卡了，稍候再试');
                     }
                 });
             }
